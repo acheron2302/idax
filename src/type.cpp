@@ -2,6 +2,7 @@
 /// \brief Implementation of ida::type — type system pimpl wrapping tinfo_t.
 
 #include "detail/type_impl.hpp"
+#include <ida/instruction.hpp>
 
 namespace ida::type {
 
@@ -514,11 +515,20 @@ Status TypeInfo::add_member(std::string_view name, const TypeInfo& member_type,
 // ── Application ─────────────────────────────────────────────────────────
 
 Status TypeInfo::apply(Address ea) const {
-    if (!impl_)
-        return std::unexpected(Error::internal("TypeInfo has null impl"));
+  if (!impl_)
+    return std::unexpected(Error::internal("TypeInfo has null impl"));
+
+  auto insn = ida::instruction::decode(ea);
+  if (insn && insn->mnemonic() == "call") {
+    if (!apply_callee_tinfo(ea, impl_->ti))
+      return std::unexpected(
+        Error::sdk("apply_callee_tinfo failed", std::to_string(ea)));
+  } else {
     if (!apply_tinfo(ea, impl_->ti, TINFO_DEFINITE))
-        return std::unexpected(Error::sdk("apply_tinfo failed", std::to_string(ea)));
-    return ida::ok();
+      return std::unexpected(
+        Error::sdk("apply_tinfo failed", std::to_string(ea)));
+  }
+  return ida::ok();
 }
 
 Status TypeInfo::save_as(std::string_view name) const {
