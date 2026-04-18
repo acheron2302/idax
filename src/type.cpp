@@ -515,11 +515,10 @@ Status TypeInfo::add_member(std::string_view name, const TypeInfo& member_type,
 // ── Application ─────────────────────────────────────────────────────────
 
 Status TypeInfo::apply(Address ea) const {
-  if (!impl_)
-    return std::unexpected(Error::internal("TypeInfo has null impl"));
+    if (!impl_)
+        return std::unexpected(Error::internal("TypeInfo has null impl"));
 
-  auto insn = ida::instruction::decode(ea);
-  if (insn && insn->mnemonic() == "call") {
+  if (ida::instruction::is_call(ea)) {
     if (!apply_callee_tinfo(ea, impl_->ti))
       return std::unexpected(
         Error::sdk("apply_callee_tinfo failed", std::to_string(ea)));
