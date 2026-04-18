@@ -573,16 +573,14 @@ bool has_fall_through(Address ea) {
 }
 
 bool is_call(Address ea) {
-    insn_t raw;
-    if (decode_insn(&raw, ea) <= 0)
-        return false;
-    // Check for call xrefs from this instruction.
-    xrefblk_t xb;
-    for (bool ok = xb.first_from(ea, XREF_ALL); ok; ok = xb.next_from()) {
-        if (xb.iscode && (xb.type == fl_CN || xb.type == fl_CF))
-            return true;
-    }
+  insn_t raw;
+  if (decode_insn(&raw, ea) <= 0)
     return false;
+  // Check for call xrefs from this instruction.
+  if (is_call_insn(raw)) {
+    return true;
+  }
+  return false;
 }
 
 bool is_return(Address ea) {
